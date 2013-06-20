@@ -6,7 +6,7 @@
 from string import *
 from sys import argv
 from Bio import File
-from Bio import Fasta
+from Bio import SeqIO
 import fpformat
 import sys
 import tempfile
@@ -170,44 +170,38 @@ def runGlobPlot():
         print '         Optimised for ELM: ./GlobPlot.py 10 8 75 8 8 sequence_file'
         print '         Webserver settings: ./GlobPlot.py 10 15 74 4 5 sequence_file'
         raise SystemExit
-    parser = Fasta.RecordParser()
-    iterator = Fasta.Iterator(db,parser)
-    while 1:
-        try:
-            cur_record = iterator.next()
-            #uppercase is searchspace
-            seq = upper(cur_record.sequence)
-            # sum function
-            sum_vector = Sum(seq,RL)
-            # Run Savitzky-Golay
-            smooth = SavitzkyGolay(`smoothFrame`,0, sum_vector)
-            dydx_vector = SavitzkyGolay(`smoothFrame`,1, sum_vector)
-            #test
-            sumHEAD = sum_vector[:smoothFrame]
-            sumTAIL = sum_vector[len(sum_vector)-smoothFrame:]
-            newHEAD = []
-            newTAIL = []
-            for i in range(len(sumHEAD)):
-                try:
-                    dHEAD = (sumHEAD[i+1]-sumHEAD[i])/2
-                except:
-                    dHEAD = (sumHEAD[i]-sumHEAD[i-1])/2
-                try:
-                    dTAIL = (sumTAIL[i+1]-sumTAIL[i])/2
-                except:
-                    dTAIL = (sumTAIL[i]-sumTAIL[i-1])/2
-                newHEAD.append(dHEAD)
-                newTAIL.append(dTAIL)
-            dydx_vector[:smoothFrame] = newHEAD
-            dydx_vector[len(dydx_vector)-smoothFrame:] = newTAIL
-            globdoms, globdis = getSlices(dydx_vector, DOM_joinFrame, DOM_peakFrame, DIS_joinFrame, DIS_peakFrame)
-            s_domMask, coordstrDOM = reportSlicesTXT(globdoms, seq, 'DOM')
-            s_final, coordstrDIS = reportSlicesTXT(globdis, s_domMask, 'DIS')
-            sys.stdout.write('>'+cur_record.title+coordstrDOM+coordstrDIS+'\n')
-            print s_final
-            print '\n'
-        except AttributeError:
-            break
+    for cur_record in SeqIO.parse(db, "fasta"):
+        #uppercase is searchspace
+        seq = upper(str(cur_record.seq))
+        # sum function
+        sum_vector = Sum(seq,RL)
+        # Run Savitzky-Golay
+        smooth = SavitzkyGolay(`smoothFrame`,0, sum_vector)
+        dydx_vector = SavitzkyGolay(`smoothFrame`,1, sum_vector)
+        #test
+        sumHEAD = sum_vector[:smoothFrame]
+        sumTAIL = sum_vector[len(sum_vector)-smoothFrame:]
+        newHEAD = []
+        newTAIL = []
+        for i in range(len(sumHEAD)):
+            try:
+                dHEAD = (sumHEAD[i+1]-sumHEAD[i])/2
+            except:
+                dHEAD = (sumHEAD[i]-sumHEAD[i-1])/2
+            try:
+                dTAIL = (sumTAIL[i+1]-sumTAIL[i])/2
+            except:
+                dTAIL = (sumTAIL[i]-sumTAIL[i-1])/2
+            newHEAD.append(dHEAD)
+            newTAIL.append(dTAIL)
+        dydx_vector[:smoothFrame] = newHEAD
+        dydx_vector[len(dydx_vector)-smoothFrame:] = newTAIL
+        globdoms, globdis = getSlices(dydx_vector, DOM_joinFrame, DOM_peakFrame, DIS_joinFrame, DIS_peakFrame)
+        s_domMask, coordstrDOM = reportSlicesTXT(globdoms, seq, 'DOM')
+        s_final, coordstrDIS = reportSlicesTXT(globdis, s_domMask, 'DIS')
+        sys.stdout.write('>'+cur_record.id+coordstrDOM+coordstrDIS+'\n')
+        print s_final
+        print '\n'
     return
 
 runGlobPlot()
