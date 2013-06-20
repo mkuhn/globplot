@@ -99,7 +99,7 @@ def getSlices(dydx_data, DOM_join_frame, DOM_peak_frame, DIS_join_frame, DIS_pea
 
 
 def SavitzkyGolay(window,derivative,datalist):
-    SG_bin = 'PATH/GlobPipe-2.2/sav_gol -V0 '
+    SG_bin = 'sav_gol -V0 '
     stdin, stdout, stderr = popen3(SG_bin + '-D' + str(derivative) + ' -n' + str(window)+','+str(window))
     for data in datalist:
         stdin.write(`data`+'\n')
